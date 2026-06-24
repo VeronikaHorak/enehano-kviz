@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude kvíz — Enehano</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-mid: #AFA9EC;
+    --green: #1D9E75; --green-light: #E1F5EE;
+    --amber: #BA7517; --amber-light: #FAEEDA;
+    --text: #111; --text-2: #555; --text-3: #999;
+    --border: #E8E6E0; --bg: #F7F6F3; --white: #fff;
+    --radius: 14px; --radius-sm: 8px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 32px 20px 60px; }
+  .wrap { width: 100%; max-width: 680px; }
+  .header { text-align: center; margin-bottom: 36px; }
+  .header-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--purple); margin-bottom: 10px; }
+  .header-title { font-size: 30px; font-weight: 700; color: var(--text); margin-bottom: 8px; line-height: 1.2; }
+  .header-sub { font-size: 15px; color: var(--text-2); line-height: 1.6; max-width: 480px; margin: 0 auto; }
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 32px; margin-bottom: 14px; }
+  .form-field { margin-bottom: 14px; }
+  .form-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .form-field input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; color: var(--text); background: var(--white); outline: none; transition: border-color 0.15s; }
+  .form-field input:focus { border-color: var(--purple); }
+  .progress-wrap { margin-bottom: 28px; }
+  .progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .progress-label { font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .progress-count { font-size: 13px; font-weight: 700; color: var(--purple); }
+  .progress-bar { height: 4px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--purple); border-radius: 99px; transition: width 0.4s ease; }
+  .q-num { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple); margin-bottom: 10px; }
+  .q-text { font-size: 17px; font-weight: 600; color: var(--text); line-height: 1.45; margin-bottom: 20px; }
+  .options { display: flex; flex-direction: column; gap: 9px; }
+  .opt { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: border-color 0.15s, background 0.15s; user-select: none; }
+  .opt:hover { border-color: var(--purple-mid); background: var(--purple-light); }
+  .opt.selected { border-color: var(--purple); background: var(--purple-light); }
+  .opt-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; margin-top: 2px; transition: border-color 0.15s, background 0.15s; display: flex; align-items: center; justify-content: center; }
+  .opt.selected .opt-radio { border-color: var(--purple); background: var(--purple); }
+  .opt.selected .opt-radio::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: white; }
+  .opt-label { font-size: 14px; color: var(--text); line-height: 1.5; }
+  .open-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; color: var(--text); font-family: inherit; resize: vertical; min-height: 90px; outline: none; transition: border-color 0.15s; }
+  .open-input:focus { border-color: var(--purple); }
+  .q-nav { display: flex; justify-content: flex-end; margin-top: 24px; }
+  .btn { font-size: 14px; font-weight: 600; padding: 10px 22px; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: opacity 0.15s, transform 0.1s; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--purple); color: white; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.35; cursor: default; }
+  .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--text-2); margin-right: 10px; }
+  .btn-ghost:hover { border-color: var(--purple-mid); color: var(--purple); }
+  .result-header { text-align: center; padding: 8px 0 24px; }
+  .result-emoji { font-size: 44px; margin-bottom: 12px; }
+  .result-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .result-sub { font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 4px; }
+  .score-bar-wrap { margin: 20px 0 24px; }
+  .score-bar-label { font-size: 12px; color: var(--text-3); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .score-bar { height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 99px; background: var(--purple); transition: width 1s ease; }
+  .analysis-box { background: var(--purple-light); border-radius: var(--radius); padding: 20px 24px; margin: 16px 0; }
+  .analysis-box h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--purple); margin-bottom: 10px; }
+  .analysis-text { font-size: 14px; color: #3C3489; line-height: 1.7; white-space: pre-wrap; }
+  .gaps-box { background: var(--amber-light); border-radius: var(--radius); padding: 20px 24px; margin: 12px 0; }
+  .gaps-box h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--amber); margin-bottom: 10px; }
+  .gaps-text { font-size: 14px; color: #6B3F0A; line-height: 1.7; white-space: pre-wrap; }
+  .next-box { background: var(--green-light); border: 1px solid #9FE1CB; border-radius: var(--radius); padding: 18px 22px; margin-top: 16px; }
+  .next-box p { font-size: 14px; color: #0F6E56; line-height: 1.65; }
+  .loading-spinner { display: flex; align-items: center; gap: 10px; color: var(--text-2); font-size: 14px; padding: 16px 0; }
+  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .name-wrap h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .name-wrap p { font-size: 14px; color: var(--text-2); margin-bottom: 20px; line-height: 1.6; }
+  @media (max-width: 520px) { .card { padding: 20px 18px; } .header-title { font-size: 24px; } .q-text { font-size: 15px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="header-eyebrow">Enehano — AI tým</div>
+    <div class="header-title">Jak dobře znáte Clauda?</div>
+    <div class="header-sub">10 otázek o Cowork, funkcích a pojmech. Zabere to asi 5 minut.</div>
+  </div>
+
+  <!-- Jméno -->
+  <div class="screen active" id="screen-name">
+    <div class="card">
+      <div class="name-wrap">
+        <h2>Než začneme</h2>
+        <p>Zadejte své jméno — výsledky pomůžou Veronice připravit pro vás osobní doporučení.</p>
+        <div class="form-field">
+          <label>Vaše jméno</label>
+          <input type="text" id="input-name" placeholder="Jana Nováková" autocomplete="off" />
+        </div>
+        <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+          <button class="btn btn-primary" onclick="startQuiz()">Začít →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Otázky -->
+  <div class="screen" id="screen-quiz">
+    <div class="progress-wrap">
+      <div class="progress-top">
+        <span class="progress-label">Průběh</span>
+        <span class="progress-count" id="prog-count">1 / 10</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:10%"></div></div>
+    </div>
+    <div class="card" id="q-card"></div>
+  </div>
+
+  <!-- Výsledky -->
+  <div class="screen" id="screen-results">
+    <div class="card">
+      <div class="result-header">
+        <div class="result-emoji" id="res-emoji">🎯</div>
+        <div class="result-title" id="res-title"></div>
+        <div class="result-sub" id="res-sub"></div>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar-label"><span>Výsledek</span><span id="score-label"></span></div>
+        <div class="score-bar"><div class="score-bar-fill" id="score-bar-fill" style="width:0%"></div></div>
+      </div>
+      <div id="analysis-area"></div>
+      <div class="next-box" id="next-box" style="display:none">
+        <p style="font-size:15px; font-weight:700; color:#0F6E56; margin-bottom:8px;">✅ Kvíz dokončen!</p>
+        <p style="font-size:14px; color:#0F6E56; margin-bottom:16px;">Stáhněte výsledky a pošlete je Veronice (email nebo Teams).</p>
+        <button onclick="downloadResults()" id="btn-download" style="width:100%; background:#534AB7; color:#fff; border:none; border-radius:10px; padding:14px 20px; font-size:15px; font-weight:700; cursor:pointer; letter-spacing:0.01em;">⬇ Stáhnout výsledky</button>
+        <p style="font-size:12px; color:#3a9e7a; margin-top:10px; text-align:center;">Soubor: kviz_[vaše jméno]_[datum].json</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const QUESTIONS = [
+  {
+    id: 1, type: 'single',
+    text: 'Jaký je rozdíl mezi Skill a Pluginem v Cowork?',
+    options: [
+      'Jsou to synonyma — obojí znamená totéž',
+      'Skill je jedna uložená sada instrukcí pro konkrétní úlohu; Plugin je balíček více Skills a Connectorů dohromady',
+      'Plugin je placená verze Skillu',
+      'Skill funguje jen v chatu, Plugin jen v Cowork'
+    ],
+    correct: 1, topic: 'skills-vs-plugins'
+  },
+  {
+    id: 2, type: 'single',
+    text: 'K čemu slouží Artifacts v Clauda?',
+    options: [
+      'Je to zálohovací systém pro Cowork session',
+      'Boční panel kde Claude otevírá a zobrazuje dokumenty, tabulky nebo interaktivní mini-aplikace přímo vedle konverzace',
+      'Speciální typ Skillu pro generování obrázků',
+      'Složka na SharePointu kam Cowork ukládá výstupy'
+    ],
+    correct: 1, topic: 'artifacts'
+  },
+  {
+    id: 3, type: 'single',
+    text: 'Co se stane se souborem vytvořeným v chatu (claude.ai), pokud konverzaci smažete?',
+    options: [
+      'Soubor se automaticky uloží do OneDrive před smazáním',
+      'Soubor zůstane dostupný v historii ještě 30 dní',
+      'Soubor je nenávratně pryč — nelze ho znovu stáhnout',
+      'Soubor se přesune do archivu v nastavení účtu'
+    ],
+    correct: 2, topic: 'chat-soubory'
+  },
+  {
+    id: 4, type: 'single',
+    text: 'Co si Claude pamatuje napříč různými konverzacemi v chatu (claude.ai)?',
+    options: [
+      'Vše — Claude si pamatuje každou konverzaci automaticky',
+      'Nic — každá konverzace začíná vždy od nuly bez jakékoli paměti',
+      'Jen to, co si aktivně uloží do Paměti (Memory) — buď automaticky, nebo na váš pokyn',
+      'Pouze soubory, které jste sdíleli — text si nepamatuje'
+    ],
+    correct: 2, topic: 'pamet'
+  },
+  {
+    id: 5, type: 'single',
+    text: 'Kdy použijete model Opus místo Sonnet?',
+    options: [
+      'Opus vždy — je to nejnovější model, Sonnet je zastaralý',
+      'Sonnet na rychlé každodenní úlohy, Opus na složité analýzy, vícevrstvé problémy nebo když výsledek musí být precizní',
+      'Opus jen pro generování obrázků, Sonnet pro text',
+      'Záleží jen na rychlosti — Sonnet je rychlejší, jinak jsou stejné'
+    ],
+    correct: 1, topic: 'modely'
+  },
+  {
+    id: 6, type: 'single',
+    text: 'K čemu slouží Projects v chatu (claude.ai) a kdy je použít místo Cowork?',
+    options: [
+      'Projects jsou totéž co Cowork — jen jiný název pro desktop aplikaci',
+      'Projects jsou složky v chatu které si pamatují kontext napříč konverzacemi; hodí se když opakovaně řešíte stejný typ práce ale nepotřebujete ukládat soubory automaticky',
+      'Projects slouží výhradně ke sdílení konverzací s kolegy',
+      'Projects jsou pro naplánované úlohy — stejná funkce jako Scheduled v Cowork'
+    ],
+    correct: 1, topic: 'projects'
+  },
+  {
+    id: 7, type: 'single',
+    text: 'Co musíte mít nastavené, aby Scheduled (naplánované úlohy) v Cowork fungovaly spolehlivě?',
+    options: [
+      'Stačí napsat instrukci — Cowork si vše zařídí sám bez dalšího nastavení',
+      'Cowork musí být nainstalovaný, počítač zapnutý a napojená složka pro ukládání výstupů',
+      'Scheduled funguje jen s placeným Opus modelem',
+      'Potřebujete speciální IT oprávnění od administrátora'
+    ],
+    correct: 1, topic: 'scheduled'
+  },
+  {
+    id: 8, type: 'open',
+    text: 'Zkoušeli jste Artifacts v chatu nebo Cowork? Pokud ano — co jste vytvořili a jak to využili? Pokud ne — víte k čemu slouží?',
+    topic: 'zkusenosti-artifacts'
+  },
+  {
+    id: 9, type: 'open',
+    text: 'Zkoušeli jste Scheduled (naplánované úlohy) v Cowork? Pokud ano — co jste naplánovali? Pokud ne — napadá vás, k čemu byste to ve své práci využili?',
+    topic: 'zkusenosti-scheduled'
+  },
+  {
+    id: 10, type: 'open',
+    text: 'Co se chcete s Claudem naučit nebo co vám v práci s ním chybí? Napište klidně i konkrétní případ, kde si nevíte rady.',
+    topic: 'potreby'
+  }
+];
+
+let userName = '', current = 0, answers = [];
+
+function startQuiz() {
+  const n = document.getElementById('input-name').value.trim();
+  if (!n) { document.getElementById('input-name').focus(); return; }
+  userName = n;
+  answers = new Array(QUESTIONS.length).fill(null);
+  showScreen('screen-quiz');
+  renderQuestion(0);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function renderQuestion(idx) {
+  const q = QUESTIONS[idx];
+  document.getElementById('prog-count').textContent = (idx + 1) + ' / ' + QUESTIONS.length;
+  document.getElementById('prog-fill').style.width = ((idx + 1) / QUESTIONS.length * 100) + '%';
+
+  let html = `<div class="q-num">Otázka ${idx + 1} z ${QUESTIONS.length}</div><div class="q-text">${q.text}</div>`;
+
+  if (q.type === 'single') {
+    html += `<div class="options">`;
+    q.options.forEach((opt, i) => {
+      html += `<div class="opt ${answers[idx] === i ? 'selected' : ''}" onclick="selectOpt(${i})">
+        <div class="opt-radio"></div><div class="opt-label">${opt}</div></div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<textarea class="open-input" id="open-answer" placeholder="Napište svou odpověď…" oninput="saveOpen(this.value)">${answers[idx] || ''}</textarea>`;
+  }
+
+  const isLast = idx === QUESTIONS.length - 1;
+  const dis = (q.type === 'single' && answers[idx] === null) ? 'disabled' : '';
+  html += `<div class="q-nav">`;
+  if (idx > 0) html += `<button class="btn btn-ghost" onclick="goBack()">← Zpět</button>`;
+  html += `<button class="btn btn-primary" id="btn-next" onclick="goNext()" ${dis}>${isLast ? 'Zobrazit výsledky →' : 'Další →'}</button></div>`;
+
+  document.getElementById('q-card').innerHTML = html;
+}
+
+function selectOpt(i) { answers[current] = i; renderQuestion(current); }
+function saveOpen(v) { answers[current] = v.trim(); document.getElementById('btn-next').disabled = false; }
+function goBack() { if (current > 0) { current--; renderQuestion(current); } }
+
+function goNext() {
+  if (QUESTIONS[current].type === 'open') {
+    const ta = document.getElementById('open-answer');
+    answers[current] = ta ? ta.value.trim() : '';
+  }
+  if (current < QUESTIONS.length - 1) { current++; renderQuestion(current); }
+  else showResults();
+}
+
+async function showResults() {
+  showScreen('screen-results');
+
+  const singleQs = QUESTIONS.filter(q => q.type === 'single');
+  let score = 0;
+  singleQs.forEach(q => { if (answers[QUESTIONS.indexOf(q)] === q.correct) score++; });
+  const total = singleQs.length;
+  const pct = Math.round(score / total * 100);
+
+  document.getElementById('res-emoji').textContent = pct >= 86 ? '🎯' : pct >= 57 ? '📚' : '🌱';
+  document.getElementById('res-title').textContent = userName + ' — ' + score + ' z ' + total + ' správně';
+  document.getElementById('res-sub').textContent = pct >= 86 ? 'Výborně! Clauda znáte opravdu dobře.' : pct >= 57 ? 'Dobrý základ — pár věcí ještě doladíme.' : 'Nevadí — od toho tady jsme. Veronika připraví doporučení přímo pro vás.';
+  document.getElementById('score-label').textContent = pct + '%';
+  document.getElementById('analysis-area').innerHTML = `<div class="loading-spinner"><div class="spinner"></div> Analyzuji vaše odpovědi…</div>`;
+
+  setTimeout(() => { document.getElementById('score-bar-fill').style.width = pct + '%'; }, 100);
+
+  // Sestavení dat pro odeslání
+  const record = {
+    jmeno: userName,
+    datum: new Date().toISOString().slice(0, 10),
+    cas: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+    skore: score + '/' + total,
+    procenta: pct + '%',
+    odpovedi: QUESTIONS.map((q, i) => ({
+      cislo: i + 1,
+      otazka: q.text,
+      topic: q.topic,
+      typ: q.type,
+      odpoved: q.type === 'single' ? (q.options[answers[i]] || '(bez odpovědi)') : (answers[i] || '(nevyplněno)'),
+      spravne: q.type === 'single' ? (answers[i] === q.correct ? 'ANO' : 'NE') : 'n/a'
+    })),
+    q1: answers[0] === QUESTIONS[0].correct ? 'ANO' : 'NE',
+    q2: answers[1] === QUESTIONS[1].correct ? 'ANO' : 'NE',
+    q3: answers[2] === QUESTIONS[2].correct ? 'ANO' : 'NE',
+    q4: answers[3] === QUESTIONS[3].correct ? 'ANO' : 'NE',
+    q5: answers[4] === QUESTIONS[4].correct ? 'ANO' : 'NE',
+    q6: answers[5] === QUESTIONS[5].correct ? 'ANO' : 'NE',
+    q7: answers[6] === QUESTIONS[6].correct ? 'ANO' : 'NE',
+    q8: answers[7] || '(nevyplněno)',
+    q9: answers[8] || '(nevyplněno)',
+    q10: answers[9] || '(nevyplněno)'
+  };
+
+  // Analýza přes Claude API
+  const answerSummary = QUESTIONS.map((q, i) => {
+    if (q.type === 'single') {
+      const ok = answers[i] === q.correct;
+      return `Q${i+1} [${q.topic}]: ${ok ? '✓' : '✗'} "${q.options[answers[i]] || '(bez odpovědi)'}"${!ok ? ' (správně: ' + q.options[q.correct] + ')' : ''}`;
+    }
+    return `Q${i+1} [${q.topic}] — otevřená: "${answers[i] || '(nevyplněno)'}"`;
+  }).join('\n');
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: `Jsi asistent Veroniky z Enehano. Tito lidé aktivně používají Claude a tvoří vlastní Skills — nejsou začátečníci.
+
+Respondent: ${userName} | Skóre: ${score}/${total}
+${answerSummary}
+
+Napiš osobní feedback VE DVOU ČÁSTECH:
+
+ČÁST 1 — CO UŽ UMÍM DOBŘE:
+Max 2 věty. Co zjevně chápe nebo používá.
+
+ČÁST 2 — CO BY SE HODILO DOUČIT:
+Max 3 konkrétní body. Co přesně si má vyzkoušet. Nezmiňuj co zvládl.
+
+Česky, neformálně, bez úvodu a závěru.` }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '';
+    record.analyza = text;
+
+    const parts = text.split(/ČÁST 2/i);
+    const p1 = parts[0].replace(/ČÁST 1[^\n]*/i, '').trim();
+    const p2 = parts[1] ? parts[1].replace(/^[—–\s-]+[^\n]*/i, '').trim() : '';
+
+    document.getElementById('analysis-area').innerHTML = `
+      ${p1 ? `<div class="analysis-box"><h3>✓ Co už umím dobře</h3><div class="analysis-text">${p1}</div></div>` : ''}
+      ${p2 ? `<div class="gaps-box"><h3>📖 Co by se hodilo doučit</h3><div class="gaps-text">${p2}</div></div>` : ''}`;
+  } catch(e) {
+    record.analyza = '';
+    document.getElementById('analysis-area').innerHTML = '';
+  }
+
+  // Zobraz tlačítko ke stažení
+  _lastRecord = record;
+  document.getElementById('next-box').style.display = 'block';
+}
+
+let _lastRecord = null;
+
+function downloadResults() {
+  if (!_lastRecord) return;
+  const blob = new Blob([JSON.stringify(_lastRecord, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const jmeno = (_lastRecord.jmeno || 'vysledky').replace(/\s+/g, '_');
+  const datum = (_lastRecord.datum || new Date().toISOString().slice(0,10));
+  a.href = url;
+  a.download = `kviz_${jmeno}_${datum}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

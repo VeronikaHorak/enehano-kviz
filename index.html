@@ -128,7 +128,10 @@
       </div>
       <div id="analysis-area"></div>
       <div class="next-box" id="next-box" style="display:none">
-        <p>✅ Vaše odpovědi byly odeslány. Veronika výsledky zpracuje a připraví pro tým doporučení a návody.</p>
+        <p>✅ Kvíz dokončen! Stáhněte si JSON soubor a pošlete ho Veronice přes Teams nebo email.</p>
+        <p style="margin-top:10px">
+          <button id="download-btn" onclick="downloadResults()" style="background:#534AB7;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;">⬇ Stáhnout výsledky jako JSON</button>
+        </p>
       </div>
     </div>
   </div>
@@ -327,7 +330,17 @@ async function showResults() {
       typ: q.type,
       odpoved: q.type === 'single' ? (q.options[answers[i]] || '(bez odpovědi)') : (answers[i] || '(nevyplněno)'),
       spravne: q.type === 'single' ? (answers[i] === q.correct ? 'ANO' : 'NE') : 'n/a'
-    }))
+    })),
+    q1: answers[0] === QUESTIONS[0].correct ? 'ANO' : 'NE',
+    q2: answers[1] === QUESTIONS[1].correct ? 'ANO' : 'NE',
+    q3: answers[2] === QUESTIONS[2].correct ? 'ANO' : 'NE',
+    q4: answers[3] === QUESTIONS[3].correct ? 'ANO' : 'NE',
+    q5: answers[4] === QUESTIONS[4].correct ? 'ANO' : 'NE',
+    q6: answers[5] === QUESTIONS[5].correct ? 'ANO' : 'NE',
+    q7: answers[6] === QUESTIONS[6].correct ? 'ANO' : 'NE',
+    q8: answers[7] || '(nevyplněno)',
+    q9: answers[8] || '(nevyplněno)',
+    q10: answers[9] || '(nevyplněno)'
   };
 
   // Analýza přes Claude API
@@ -372,31 +385,4 @@ Max 3 konkrétní body. Co přesně si má vyzkoušet. Nezmiňuj co zvládl.
 
     document.getElementById('analysis-area').innerHTML = `
       ${p1 ? `<div class="analysis-box"><h3>✓ Co už umím dobře</h3><div class="analysis-text">${p1}</div></div>` : ''}
-      ${p2 ? `<div class="gaps-box"><h3>📖 Co by se hodilo doučit</h3><div class="gaps-text">${p2}</div></div>` : ''}`;
-  } catch(e) {
-    record.analyza = '';
-    document.getElementById('analysis-area').innerHTML = '';
-  }
-
-  // Odeslání výsledků na webhook
-  await sendResults(record);
-  document.getElementById('next-box').style.display = 'block';
-}
-
-async function sendResults(record) {
-  if (CONFIG.webhookUrl === '__WEBHOOK_URL__') return; // webhook ještě není nastaven
-  try {
-    await fetch(CONFIG.webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record)
-    });
-  } catch(e) {
-    console.log('Webhook nedostupný, výsledky uloženy lokálně.');
-  }
-  // Vždy uložit lokálně jako záloha
-  try { localStorage.setItem('kviz_' + userName + '_' + Date.now(), JSON.stringify(record)); } catch(e) {}
-}
-</script>
-</body>
-</html>
+      ${p2 ? `<div class="gaps-box"><h3>📖 Co by se hodilo doučit</h3><div class="gaps-text">${p2}</div></

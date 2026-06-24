@@ -102,6 +102,16 @@
     </div>
   </div>
 
+  <!-- Čekání na Forms -->
+  <div class="screen" id="screen-waiting">
+    <div class="card" style="text-align:center; padding: 40px 32px;">
+      <div style="font-size:36px; margin-bottom:16px;">📋</div>
+      <h2 style="margin-bottom:12px;">Vyplňte registrační formulář</h2>
+      <p style="color:var(--text-2); margin-bottom:28px;">Otevřel se formulář v novém okně. Vyplňte své jméno a odešlete ho — pak se vraťte sem a klikněte na tlačítko níže.</p>
+      <button class="btn btn-primary" onclick="continueToQuiz()">✅ Formulář jsem odeslal/a — jdeme na kvíz!</button>
+    </div>
+  </div>
+
   <!-- Otázky -->
   <div class="screen" id="screen-quiz">
     <div class="progress-wrap">
@@ -140,6 +150,7 @@ const CONFIG = {
   // URL Cowork webhook endpointu pro zápis do SharePointu
   // Vygeneruje Cowork skill při nastavení
   webhookUrl: 'https://default582bed0130474d81b89438783f3015.0c.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/dbda2f72ee01438998890ced95e78924/triggers/manual/paths/invoke?api-version=1',
+  formsUrl: 'https://forms.office.com/Pages/ResponsePage.aspx?id=Ae0rWEcwgU24lDh4PzAVDE8onaSWC0xLhBcIWWVeE4hUMzFZSzNNMEJDWEZVNDJZUUxXTldNTVRJMy4u',
   // Fallback: email kam poslat výsledky pokud webhook nefunguje
   fallbackEmail: 'veronika.stuchlikova@enehano.cz'
 };
@@ -245,6 +256,11 @@ function startQuiz() {
   const n = document.getElementById('input-name').value.trim();
   if (!n) { document.getElementById('input-name').focus(); return; }
   userName = n;
+  window.open(CONFIG.formsUrl, '_blank');
+  showScreen('screen-waiting');
+}
+
+function continueToQuiz() {
   answers = new Array(QUESTIONS.length).fill(null);
   showScreen('screen-quiz');
   renderQuestion(0);
@@ -411,24 +427,4 @@ async function sendResults(record) {
       throw new Error('HTTP ' + resp.status);
     }
   } catch(e) {
-    // Fallback — nabídni stažení
-    msgEl.innerHTML = '⚠️ Odeslání se nepodařilo. Stáhni výsledky a pošli je Veronice.<br><br>'
-      + '<button onclick="downloadResults()" style="background:#534AB7;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;">⬇ Stáhnout výsledky</button>';
-  }
-}
-
-function downloadResults() {
-  if (!_lastRecord) return;
-  const blob = new Blob([JSON.stringify(_lastRecord, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const jmeno = (_lastRecord.jmeno || 'vysledky').replace(/\s+/g, '_');
-  const datum = (_lastRecord.datum || new Date().toISOString().slice(0,10));
-  a.href = url;
-  a.download = `kviz_${jmeno}_${datum}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-</script>
-</body>
-</html>
+ 

@@ -128,10 +128,7 @@
       </div>
       <div id="analysis-area"></div>
       <div class="next-box" id="next-box" style="display:none">
-        <p>✅ Kvíz dokončen! Stáhněte si JSON soubor a pošlete ho Veronice přes Teams nebo email.</p>
-        <p style="margin-top:10px">
-          <button id="download-btn" onclick="downloadResults()" style="background:#534AB7;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;">⬇ Stáhnout výsledky jako JSON</button>
-        </p>
+        <p id="next-box-msg">✅ Kvíz dokončen! Odesílám výsledky...</p>
       </div>
     </div>
   </div>
@@ -142,7 +139,7 @@
 const CONFIG = {
   // URL Cowork webhook endpointu pro zápis do SharePointu
   // Vygeneruje Cowork skill při nastavení
-  webhookUrl: '__WEBHOOK_URL__',
+  webhookUrl: 'https://default582bed0130474d81b89438783f3015.0c.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/dbda2f72ee01438998890ced95e78924/triggers/manual/paths/invoke?api-version=1',
   // Fallback: email kam poslat výsledky pokud webhook nefunguje
   fallbackEmail: 'veronika.stuchlikova@enehano.cz'
 };
@@ -385,4 +382,53 @@ Max 3 konkrétní body. Co přesně si má vyzkoušet. Nezmiňuj co zvládl.
 
     document.getElementById('analysis-area').innerHTML = `
       ${p1 ? `<div class="analysis-box"><h3>✓ Co už umím dobře</h3><div class="analysis-text">${p1}</div></div>` : ''}
-      ${p2 ? `<div class="gaps-box"><h3>📖 Co by se hodilo doučit</h3><div class="gaps-text">${p2}</div></
+      ${p2 ? `<div class="gaps-box"><h3>📖 Co by se hodilo doučit</h3><div class="gaps-text">${p2}</div></div>` : ''}`;
+  } catch(e) {
+    record.analyza = '';
+    document.getElementById('analysis-area').innerHTML = '';
+  }
+
+  // Odeslání výsledků na webhook
+  await sendResults(record);
+  document.getElementById('next-box').style.display = 'block';
+}
+
+// Uloží výsledky pro pozdější stažení
+let _lastRecord = null;
+
+async function sendResults(record) {
+  _lastRecord = record;
+  const msgEl = document.getElementById('next-box-msg');
+  try {
+    const resp = await fetch(CONFIG.webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    });
+    if (resp.ok) {
+      msgEl.textContent = '✅ Výsledky byly úspěšně odeslány do Excelu. Díky!';
+    } else {
+      throw new Error('HTTP ' + resp.status);
+    }
+  } catch(e) {
+    // Fallback — nabídni stažení
+    msgEl.innerHTML = '⚠️ Odeslání se nepodařilo. Stáhni výsledky a pošli je Veronice.<br><br>'
+      + '<button onclick="downloadResults()" style="background:#534AB7;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;">⬇ Stáhnout výsledky</button>';
+  }
+}
+
+function downloadResults() {
+  if (!_lastRecord) return;
+  const blob = new Blob([JSON.stringify(_lastRecord, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const jmeno = (_lastRecord.jmeno || 'vysledky').replace(/\s+/g, '_');
+  const datum = (_lastRecord.datum || new Date().toISOString().slice(0,10));
+  a.href = url;
+  a.download = `kviz_${jmeno}_${datum}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
